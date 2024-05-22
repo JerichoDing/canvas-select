@@ -99,6 +99,9 @@ export default class CanvasSelect extends EventBus {
     /** 滚动缩放 */
     scrollZoom = true;
 
+    /** 鼠标是否在图片内 */
+    isInImage = false;
+
     private timer: any;
     /** 最小touch双击时间 */
     dblTouch = 300;
@@ -222,6 +225,7 @@ export default class CanvasSelect extends EventBus {
         const offsetX = Math.round(mouseX / this.scale);
         const offsetY = Math.round(mouseY / this.scale);
         this.mouse = this.isMobile && (e as TouchEvent).touches.length === 2 ? [mouseCX, mouseCY] : [mouseX, mouseY];
+        this.isInImage = this.isMouseInImage(e)
         this.remmberOrigin = [mouseX - this.originX, mouseY - this.originY];
         if ((!this.isMobile && (e as MouseEvent).buttons === 1) || (this.isMobile && (e as TouchEvent).touches.length === 1)) { // 鼠标左键
             const ctrls = this.activeShape.ctrlsData || [];
@@ -422,7 +426,7 @@ export default class CanvasSelect extends EventBus {
         } else if ([Shape.Polygon, Shape.Line].includes(this.activeShape.type) && this.activeShape.creating) {
             // 多边形添加点
             this.update();
-        } else if ((!this.isMobile && (e as MouseEvent).buttons === 2 && (e as MouseEvent).which === 3) || (this.isMobile && (e as TouchEvent).touches.length === 1 && !this.isTouch2)) {
+        } else if (this.isInImage && ((!this.isMobile && (e as MouseEvent).buttons === 2 && (e as MouseEvent).which === 3) || (this.isMobile && (e as TouchEvent).touches.length === 1 && !this.isTouch2))) {
             // 拖动背景
             this.originX = Math.round(mouseX - this.remmberOrigin[0]);
             this.originY = Math.round(mouseY - this.remmberOrigin[1]);
@@ -451,6 +455,7 @@ export default class CanvasSelect extends EventBus {
             }
             this.dblTouchStore = Date.now();
         }
+        this.isInImage = false
         this.remmber = [];
         if (this.activeShape.type !== Shape.None && !this.ctrlKey) {
             this.activeShape.dragging = false;
@@ -637,6 +642,21 @@ export default class CanvasSelect extends EventBus {
             mouseY >= this.originY &&
             mouseX <= this.originX + this.IMAGE_ORIGIN_WIDTH * this.scale &&
             mouseY <= this.originY + this.IMAGE_ORIGIN_HEIGHT * this.scale;
+    }
+
+    /**
+     * 判断鼠标是否在图片内部
+     * @param e MouseEvent
+     * @returns 布尔值
+     */
+    isMouseInImage(e: MouseEvent | TouchEvent): boolean {
+        const { mouseX, mouseY } = this.mergeEvent(e);
+        return (
+            mouseX > this.originX &&
+            mouseY > this.originY &&
+            mouseX < this.originX + this.IMAGE_WIDTH &&
+            mouseY < this.originY + this.IMAGE_HEIGHT
+        );
     }
 
     /**
